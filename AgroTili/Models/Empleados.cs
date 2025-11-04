@@ -1,0 +1,36 @@
+
+using System;
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+namespace AgroTili.Models
+{
+    public class Empleados
+    {
+        [Required]
+        [Key]
+        public int id_empleado { get; set; }
+        [Required]
+       [ForeignKey("Roles")]
+        public int id_role { get; set; }
+         [Required]
+        public string? apellido { get; set; }
+         [Required]
+        public string? nombre { get; set; }
+        [Required]
+        public string? email { get; set; }
+         [Required]
+        public string? clave { get; set; }
+         [Required]
+        public bool ocupado { get; set; }
+         [Required]
+         public DateTime fecha_ingraso { get; set; }
+         public DateTime? fecha_egreso { get; set; }
+         [Required]
+        public bool activo { get; set; }
+         // Propiedad de navegación opcional
+        public Roles? Roles { get; set; }
+
+}
+}
+
+
