@@ -2,6 +2,7 @@
 using System;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+
 namespace AgroTili.Models
 {
     public class Empleados
@@ -22,8 +23,12 @@ namespace AgroTili.Models
         public string? clave { get; set; }
          [Required]
         public bool ocupado { get; set; }
-         [Required]
-         public DateTime fecha_ingraso { get; set; }
+        [Required]
+        [DataType(DataType.Date)]
+        [DisplayFormat(DataFormatString = "{0:dd-MM-yyyy}", ApplyFormatInEditMode = true)]
+        public DateTime fecha_ingreso { get; set; }
+        [DataType(DataType.Date)]
+        [DisplayFormat(DataFormatString = "{0:dd-MM-yyyy}", ApplyFormatInEditMode = true)]
          public DateTime? fecha_egreso { get; set; }
          [Required]
         public bool activo { get; set; }

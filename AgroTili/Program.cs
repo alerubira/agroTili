@@ -20,9 +20,7 @@ builder.Services.AddDbContext<DataContext>(options =>  // Contexto de base de da
     options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString))
 );
 
-builder.Services.AddDbContext<DataContext>(options =>
-    options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString))
-);
+
 // Add services to the container.
 builder.Services.AddControllersWithViews();
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -43,6 +41,8 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             IssuerSigningKey = new SymmetricSecurityKey(System.Text.Encoding.ASCII.GetBytes(secreto)),
         };
     });
+
+ 
 //builder.Services.AddControllers(); // ← agrega soporte para controladores API
 builder.Services.AddEndpointsApiExplorer(); // ← necesario para Swagger
 var app = builder.Build();

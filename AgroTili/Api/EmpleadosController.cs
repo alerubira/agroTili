@@ -35,41 +35,59 @@ namespace AgroTili.Api
                 //string usuario = User?.Identity?.Name ?? "";
                 string usuario = User?.Claims?.FirstOrDefault(c => c.Type == ClaimTypes.Name)?.Value ?? "";
                 if (string.IsNullOrEmpty(usuario))
-                    return BadRequest("No se pudo obtener el email del usuario");
+                    return BadRequest("No se pudo obtener el email del Empleado");
 
-                var res = await _context.Empleados.SingleOrDefaultAsync(x => x.email == usuario);
+               // var res = await _context.Empleados.SingleOrDefaultAsync(x => x.email == usuario);
+                var res = await _context.Empleados
+                    .Include(e => e.Roles)
+                    .FirstOrDefaultAsync(e => e.email == usuario);
                 if (res == null)
                     return NotFound($"No se encontró el empleado con email {usuario}");
-                return Ok(res);
+                   // res.clave=null;//para no devolver la clave
+                  // mapear y formatear fechas para la respuesta JSON
+              /*  var empleadoDto = new
+                {
+                    id_empleado = res.id_empleado,
+                    id_role = res.id_role,
+                    apellido = res.apellido ?? string.Empty,
+                    nombre = res.nombre ?? string.Empty,
+                    email = res.email ?? string.Empty,
+                    ocupado = res.ocupado,
+                    fecha_ingreso = res.fecha_ingreso.ToString("dd-MM-yyyy"),
+                    fecha_egreso = res.fecha_egreso?.ToString("dd-MM-yyyy"),
+                    activo = res.activo,
+                    nombre_role = res.Roles?.nombre_role
+                }; */
+                return Ok(MapearEmpleadoDto(res));
             }
             catch (Exception ex)
             {
                 return BadRequest(ex.Message);
             }
         }
-         [HttpPost("login")]
+        [HttpPost("login")]
         [AllowAnonymous]
         public async Task<IActionResult> Login([FromForm] string Usuario, [FromForm] string Clave)
         {
             try
             {
-                 if (string.IsNullOrEmpty(Usuario) || string.IsNullOrEmpty(Clave))
-                               return BadRequest("Usuario y clave son requeridos");
+                if (string.IsNullOrEmpty(Usuario) || string.IsNullOrEmpty(Clave))
+                    return BadRequest("Usuario y clave son requeridos");
                 var empleado = await _context.Empleados
                        .FirstOrDefaultAsync(p => p.email == Usuario);
 
                 if (empleado == null)
                     return Unauthorized("El Usuario no existe");
-                 if (string.IsNullOrEmpty(empleado.clave))
-                    return Unauthorized("Error en los datos del usuario");    
+                if (string.IsNullOrEmpty(empleado.clave))
+                    return Unauthorized("Error en los datos del usuario");
 
-                if(!_seguridadService.VerificarContraseña(Clave,empleado.clave))
+                if (!_seguridadService.VerificarContraseña(Clave, empleado.clave))
                     return Unauthorized("Usuario o clave incorrectos");
-               /* var hashed = _seguridadService.HashearContraseña(Clave).Trim();
-                var claveGuardada = empleado.clave.Trim();
+                /* var hashed = _seguridadService.HashearContraseña(Clave).Trim();
+                 var claveGuardada = empleado.clave.Trim();
 
-                if (hashed != claveGuardada)
-                    return Unauthorized("Usuario o clave incorrectos");*/
+                 if (hashed != claveGuardada)
+                     return Unauthorized("Usuario o clave incorrectos");*/
 
                 var secretKey = _configuration["TokenAuthentication:SecretKey"];
                 var issuer = _configuration["TokenAuthentication:Issuer"];
@@ -81,7 +99,7 @@ namespace AgroTili.Api
                 var key = new SymmetricSecurityKey(Encoding.ASCII.GetBytes(secretKey));
                 var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
                 if (string.IsNullOrWhiteSpace(empleado.email))
-                   return StatusCode(500, "Datos del usuario incompletos: email no disponible");
+                    return StatusCode(500, "Datos del usuario incompletos: email no disponible");
 
                 var claims = new[]
                 {
@@ -106,6 +124,67 @@ namespace AgroTili.Api
             {
                 return BadRequest("desde api: " + ex.Message);
             }
+        }
+        [HttpPut("actualizar")]
+        public async Task<ActionResult<Empleados>> Actualizar([FromBody] EmpleadoUpdateDto datosActualizados)
+        {
+            try
+            {
+                if (User == null)
+                    return Unauthorized("Usuario no autenticado");
+                //string usuario = User?.Identity?.Name ?? "";
+                string usuario = User?.Claims?.FirstOrDefault(c => c.Type == ClaimTypes.Name)?.Value ?? "";
+                if (string.IsNullOrEmpty(usuario))
+                    return BadRequest("No se pudo obtener el email del Empleado");
+
+                // var res = await _context.Empleados.SingleOrDefaultAsync(x => x.email == usuario);
+                var empleado = await _context.Empleados
+                    .Include(e => e.Roles)
+                    .FirstOrDefaultAsync(e => e.email == usuario);
+                if (empleado == null)
+                    return NotFound($"No se encontró el empleado con email {usuario}");
+
+                var idClaim = User?.Claims?.FirstOrDefault(c => c.Type == "id_empleado")?.Value;
+                if (datosActualizados.id_empleado.ToString() != idClaim)
+                    return Unauthorized("No tienes permiso para actualizar este Empleadoo.");
+
+                //  Actualizar los campos permitidos
+                empleado.nombre = datosActualizados.nombre;
+                empleado.apellido = datosActualizados.apellido;
+
+
+
+
+
+                //  Guardar cambios
+                _context.Empleados.Update(empleado);
+                await _context.SaveChangesAsync();
+
+                // Devolver el empleado actualizado
+                return Ok(MapearEmpleadoDto(empleado));
+            }
+            catch (Exception ex)
+            {
+                return BadRequest("Error al actualizar: " + ex.Message);
+            }
+        }
+        private object MapearEmpleadoDto(Empleados res)
+        {
+                if (res == null) return null!;
+
+                return new
+                {
+                    id_empleado = res.id_empleado,
+                    id_role = res.id_role,
+                    apellido = res.apellido ?? string.Empty,
+                    nombre = res.nombre ?? string.Empty,
+                    email = res.email ?? string.Empty,
+                    ocupado = res.ocupado,
+                    fecha_ingreso = res.fecha_ingreso.ToString("dd-MM-yyyy"),
+                    fecha_egreso = res.fecha_egreso?.ToString("dd-MM-yyyy"),
+                    activo = res.activo,
+                    nombre_role = res.Roles?.nombre_role
+                };
         }
     }
 }
