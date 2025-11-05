@@ -14,7 +14,9 @@ Env.Load("claves.env");
 builder.Configuration.AddEnvironmentVariables();
 
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
-
+builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("EmailSettings"));
+builder.Services.AddScoped<EmailService>();
+builder.Services.AddScoped<SeguridadService>();
 builder.Services.AddSingleton<SeguridadService>();
 builder.Services.AddDbContext<DataContext>(options =>  // Contexto de base de datos
     options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString))

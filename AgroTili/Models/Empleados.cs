@@ -30,8 +30,9 @@ namespace AgroTili.Models
         [DataType(DataType.Date)]
         [DisplayFormat(DataFormatString = "{0:dd-MM-yyyy}", ApplyFormatInEditMode = true)]
          public DateTime? fecha_egreso { get; set; }
-         [Required]
+        [Required]
         public bool activo { get; set; }
+        public String? clave_provisoria{ get; set; }
          // Propiedad de navegación opcional
         public Roles? Roles { get; set; }
 
