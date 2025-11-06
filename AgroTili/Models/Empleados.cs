@@ -14,13 +14,13 @@ namespace AgroTili.Models
        [ForeignKey("Roles")]
         public int id_role { get; set; }
          [Required]
-        public string? apellido { get; set; }
+        public required string apellido { get; set; }
          [Required]
-        public string? nombre { get; set; }
+        public required string nombre { get; set; }
         [Required]
-        public string? email { get; set; }
+        public required string email { get; set; }
          [Required]
-        public string? clave { get; set; }
+        public required string clave { get; set; }
          [Required]
         public bool ocupado { get; set; }
         [Required]
