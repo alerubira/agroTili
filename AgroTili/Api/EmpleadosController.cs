@@ -8,7 +8,7 @@ using AgroTili.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
-using System.Net;
+//using System.Net;
 //using System.Net.Mail;
 
 namespace AgroTili.Api
@@ -42,27 +42,12 @@ namespace AgroTili.Api
                 if (string.IsNullOrEmpty(usuario))
                     return BadRequest("No se pudo obtener el email del Empleado");
 
-                // var res = await _context.Empleados.SingleOrDefaultAsync(x => x.email == usuario);
                 var res = await _context.Empleados
                     .Include(e => e.Roles)
                     .FirstOrDefaultAsync(e => e.email == usuario);
                 if (res == null)
                     return NotFound($"No se encontró el empleado con email {usuario}");
-                // res.clave=null;//para no devolver la clave
-                // mapear y formatear fechas para la respuesta JSON
-                /*  var empleadoDto = new
-                  {
-                      id_empleado = res.id_empleado,
-                      id_role = res.id_role,
-                      apellido = res.apellido ?? string.Empty,
-                      nombre = res.nombre ?? string.Empty,
-                      email = res.email ?? string.Empty,
-                      ocupado = res.ocupado,
-                      fecha_ingreso = res.fecha_ingreso.ToString("dd-MM-yyyy"),
-                      fecha_egreso = res.fecha_egreso?.ToString("dd-MM-yyyy"),
-                      activo = res.activo,
-                      nombre_role = res.Roles?.nombre_role
-                  }; */
+                
                 return Ok(MapearEmpleadoDto(res));
             }
             catch (Exception ex)
@@ -83,25 +68,21 @@ namespace AgroTili.Api
 
                 if (empleado == null)
                     return Unauthorized("El Usuario no existe");
-                if (string.IsNullOrEmpty(empleado.clave))
-                    return Unauthorized("Error en los datos del usuario");
+                //if (string.IsNullOrEmpty(empleado.clave))
+                  //  return Unauthorized("Error en los datos del usuario");
 
-                if (!_seguridadService.VerificarContraseña(Clave, empleado.clave))
+                if (!_seguridadService.VerificarContraseña(Clave, empleado.clave ?? ""))
                     return Unauthorized("Usuario o clave incorrectos");
-                /* var hashed = _seguridadService.HashearContraseña(Clave).Trim();
-                 var claveGuardada = empleado.clave.Trim();
-
-                 if (hashed != claveGuardada)
-                     return Unauthorized("Usuario o clave incorrectos");*/
+                
 
                 var secretKey = _configuration["TokenAuthentication:SecretKey"];
                 var issuer = _configuration["TokenAuthentication:Issuer"];
                 var audience = _configuration["TokenAuthentication:Audience"];
                 // Validar que la clave no sea nula o vacía
-                if (string.IsNullOrWhiteSpace(secretKey) || string.IsNullOrWhiteSpace(issuer) || string.IsNullOrWhiteSpace(audience))
-                    return StatusCode(500, "Configuración de token incompleta");
+                //if (string.IsNullOrWhiteSpace(secretKey) || string.IsNullOrWhiteSpace(issuer) || string.IsNullOrWhiteSpace(audience))
+                  //  return StatusCode(500, "Configuración de token incompleta");
 
-                var key = new SymmetricSecurityKey(Encoding.ASCII.GetBytes(secretKey));
+                var key = new SymmetricSecurityKey(Encoding.ASCII.GetBytes(secretKey ??""));
                 var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
                 if (string.IsNullOrWhiteSpace(empleado.email))
                     return StatusCode(500, "Datos del usuario incompletos: email no disponible");
@@ -157,11 +138,6 @@ namespace AgroTili.Api
                 //  Actualizar los campos permitidos
                 empleado.nombre = datosActualizados.nombre;
                 empleado.apellido = datosActualizados.apellido;
-
-
-
-
-
                 //  Guardar cambios
                 _context.Empleados.Update(empleado);
                 await _context.SaveChangesAsync();
@@ -286,8 +262,9 @@ namespace AgroTili.Api
                     return BadRequest("El empleado no tiene un email válido");
                 int n = numeroAleatorio();
                 empleado.clave_provisoria = _seguridadService.HashearContraseña(n.ToString());
-                //colocar un breake para ver porque no modifica la clave provisoria
-                _context.Empleados.Update(empleado);    
+                _context.Empleados.Update(empleado);  
+                await _context.SaveChangesAsync();
+  
                 await _emailService.EnviarCorreoAsync(
                     empleado.email,
                     "Recuperación de cuenta",
