@@ -68,24 +68,19 @@ namespace AgroTili.Api
 
                 if (empleado == null)
                     return Unauthorized("El Usuario no existe");
-                //if (string.IsNullOrEmpty(empleado.clave))
-                  //  return Unauthorized("Error en los datos del usuario");
-
-                if (!_seguridadService.VerificarContraseña(Clave, empleado.clave ?? ""))
+               
+                if (!_seguridadService.VerificarContraseña(Clave, empleado.clave))
                     return Unauthorized("Usuario o clave incorrectos");
                 
 
                 var secretKey = _configuration["TokenAuthentication:SecretKey"];
                 var issuer = _configuration["TokenAuthentication:Issuer"];
                 var audience = _configuration["TokenAuthentication:Audience"];
-                // Validar que la clave no sea nula o vacía
-                //if (string.IsNullOrWhiteSpace(secretKey) || string.IsNullOrWhiteSpace(issuer) || string.IsNullOrWhiteSpace(audience))
-                  //  return StatusCode(500, "Configuración de token incompleta");
+              
 
-                var key = new SymmetricSecurityKey(Encoding.ASCII.GetBytes(secretKey ??""));
+                var key = new SymmetricSecurityKey(Encoding.ASCII.GetBytes(secretKey));
                 var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
-                if (string.IsNullOrWhiteSpace(empleado.email))
-                    return StatusCode(500, "Datos del usuario incompletos: email no disponible");
+                
 
                 var claims = new[]
                 {
