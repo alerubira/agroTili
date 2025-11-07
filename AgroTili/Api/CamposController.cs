@@ -24,8 +24,8 @@ namespace AgroTili.Api
 
         }
         [Authorize(Roles = "2")]
-        [HttpGet("camposPorCapataz")]
-        public async Task<ActionResult<List<Campos>>> CamposPorCapataz(int id_empleado)
+        [HttpGet]
+        public async Task<ActionResult<List<Campos>>> Get()
         {
             try
             {
@@ -34,11 +34,16 @@ namespace AgroTili.Api
                 string usuario = User?.Claims?.FirstOrDefault(c => c.Type == ClaimTypes.Name)?.Value ?? "";
                 if (string.IsNullOrEmpty(usuario))
                     return BadRequest("No se pudo obtener el email del Empleado");
+                var capataz = await _context.Empleados
+                       .FirstOrDefaultAsync(p => p.email == usuario && p.activo);
+                if (capataz == null)
+                    return Unauthorized("El Usuario no existe");       
 
+                       
 
                 var campos = await _context.Campos
                 //.Include(e => e.Tipos_Tareas)
-                .Where(e => e.activo && e.id_empleado == id_empleado)
+                .Where(e => e.activo && e.id_empleado == capataz.id_empleado)
                 .ToListAsync();
                 if (campos == null || campos.Count == 0)
                 {

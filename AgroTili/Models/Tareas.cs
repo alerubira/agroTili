@@ -24,6 +24,7 @@ namespace AgroTili.Models
         public DateTime fecha_inicio { get; set; }
         public DateTime? fecha_fin { get; set; }
         public bool realizada { get; set; }
+        public String? observaciones { get; set; }
         // Propiedades de navegación opcionales
         public Tipos_Tareas? Tipos_Tareas { get; set; }
         public Campos? Campos { get; set; }
