@@ -8,6 +8,7 @@ using AgroTili.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using AgroTili.Utils;
 //using System.Net;
 //using System.Net.Mail;
 
@@ -44,11 +45,11 @@ namespace AgroTili.Api
 
                 var res = await _context.Empleados
                     .Include(e => e.Roles)
-                    .FirstOrDefaultAsync(e => e.email == usuario);
+                    .FirstOrDefaultAsync(e => e.email == usuario&&e.activo);
                 if (res == null)
                     return NotFound($"No se encontró el empleado con email {usuario}");
                 
-                return Ok(MapearEmpleadoDto(res));
+                return Ok(EmpleadoMapper.MapearEmpleadoDto(res));
             }
             catch (Exception ex)
             {
@@ -64,7 +65,7 @@ namespace AgroTili.Api
                 if (string.IsNullOrEmpty(Usuario) || string.IsNullOrEmpty(Clave))
                     return BadRequest("Usuario y clave son requeridos");
                 var empleado = await _context.Empleados
-                       .FirstOrDefaultAsync(p => p.email == Usuario);
+                       .FirstOrDefaultAsync(p => p.email == Usuario&&p.activo);
 
                 if (empleado == null)
                     return Unauthorized("El Usuario no existe");
@@ -78,7 +79,7 @@ namespace AgroTili.Api
                 var audience = _configuration["TokenAuthentication:Audience"];
               
 
-                var key = new SymmetricSecurityKey(Encoding.ASCII.GetBytes(secretKey));
+                var key = new SymmetricSecurityKey(Encoding.ASCII.GetBytes(secretKey ?? ""));
                 var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
                 
 
@@ -114,19 +115,18 @@ namespace AgroTili.Api
             {
                 if (User == null)
                     return Unauthorized("Usuario no autenticado");
-                //string usuario = User?.Identity?.Name ?? "";
+                
                 string usuario = User?.Claims?.FirstOrDefault(c => c.Type == ClaimTypes.Name)?.Value ?? "";
                 if (string.IsNullOrEmpty(usuario))
                     return BadRequest("No se pudo obtener el email del Empleado");
 
-                // var res = await _context.Empleados.SingleOrDefaultAsync(x => x.email == usuario);
                 var empleado = await _context.Empleados
                     .Include(e => e.Roles)
-                    .FirstOrDefaultAsync(e => e.email == usuario);
+                    .FirstOrDefaultAsync(e => e.email == usuario&&e.activo);
                 if (empleado == null)
                     return NotFound($"No se encontró el empleado con email {usuario}");
 
-                var idClaim = User?.Claims?.FirstOrDefault(c => c.Type == "id_empleado")?.Value;
+                var idClaim = User?.Claims?.FirstOrDefault(c => c.Type == "id_empleado")?.Value ?? "";
                 if (datosActualizados.id_empleado.ToString() != idClaim)
                     return Unauthorized("No tienes permiso para actualizar este Empleadoo.");
 
@@ -138,7 +138,7 @@ namespace AgroTili.Api
                 await _context.SaveChangesAsync();
 
                 // Devolver el empleado actualizado
-                return Ok(MapearEmpleadoDto(empleado));
+                return Ok(EmpleadoMapper.MapearEmpleadoDto(empleado));
             }
             catch (Exception ex)
             {
@@ -158,13 +158,12 @@ namespace AgroTili.Api
 
                 var empleado = await _context.Empleados
                     .Include(e => e.Roles)
-                    .FirstOrDefaultAsync(e => e.email == usuario);
+                    .FirstOrDefaultAsync(e => e.email == usuario&&e.activo);
                 if (empleado == null)
                     return NotFound($"No se encontró el empleado con email {usuario}");
 
                 // Verificar contraseña actual
-                if (string.IsNullOrEmpty(empleado.clave))
-                    return BadRequest("No se pudo obtener la clave del Empleado");
+               
                 if (!_seguridadService.VerificarContraseña(claveActual, empleado.clave))
                     return Unauthorized("La contraseña actual es incorrecta");
 
@@ -189,12 +188,11 @@ namespace AgroTili.Api
 
                 var empleado = await _context.Empleados
                     .Include(e => e.Roles)
-                    .FirstOrDefaultAsync(e => e.email == email);
+                    .FirstOrDefaultAsync(e => e.email == email&&e.activo);
                 if (empleado == null)
                     return NotFound($"No se encontró el empleado con email {email}");
 
-                // Verificar contraseña del email
-                //sacr asi los posibles null clave_provisoria ?? "")
+                
                 if (!_seguridadService.VerificarContraseña(claveEmail, empleado.clave_provisoria ?? ""))
                     return Unauthorized("La contraseña del mail es incorrecta");
 
@@ -225,14 +223,14 @@ namespace AgroTili.Api
 
 
                 var operarios = await _context.Empleados
-                .Where(e => !e.ocupado && e.id_role == 3)
+                .Where(e => !e.ocupado && e.id_role == 3&&e.activo)
                 .ToListAsync();
                 if (operarios == null || operarios.Count == 0)
                 {
                     return NotFound("No hay operarios desocupados disponibles");
                 }
                 // Mapear cada empleado a tu DTO anónimo
-                var listaDto = operarios.Select(e => MapearEmpleadoDto(e)).ToList();
+                var listaDto = operarios.Select(e => EmpleadoMapper.MapearEmpleadoDto(e)).ToList();
                 return Ok(listaDto);
             }
             catch (Exception ex)
@@ -249,12 +247,11 @@ namespace AgroTili.Api
                 if (string.IsNullOrEmpty(Usuario))
                     return BadRequest("Usuario es requerido");
                 var empleado = await _context.Empleados
-                       .FirstOrDefaultAsync(p => p.email == Usuario);
+                       .FirstOrDefaultAsync(p => p.email == Usuario&&p.activo);
 
                 if (empleado == null)
                     return NotFound("El Usuario no existe");
-                if (string.IsNullOrEmpty(empleado.email))
-                    return BadRequest("El empleado no tiene un email válido");
+                
                 int n = numeroAleatorio();
                 empleado.clave_provisoria = _seguridadService.HashearContraseña(n.ToString());
                 _context.Empleados.Update(empleado);  
@@ -274,7 +271,7 @@ namespace AgroTili.Api
         }
 
 
-        private object MapearEmpleadoDto(Empleados res)
+       /* private object MapearEmpleadoDto(Empleados res)
         {
             if (res == null) return null!;
 
@@ -291,7 +288,7 @@ namespace AgroTili.Api
                 activo = res.activo,
                 nombre_role = res.Roles?.nombre_role
             };
-        }
+        }*/
       private static readonly Random rnd = new Random();
 
                 private int numeroAleatorio()

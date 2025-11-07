@@ -1,15 +1,10 @@
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.IdentityModel.Tokens;
-using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
-using System.Text;
 using AgroTili.Models;
-//using AgroTili.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
-//using System.Net;
-//using System.Net.Mail;
+
 
 namespace AgroTili.Api
 {
@@ -43,14 +38,13 @@ namespace AgroTili.Api
 
                 var maquinas = await _context.Maquinas_Agrarias
                 .Include(e => e.Tipos_Tareas)
-                .Where(e => !e.ocupado && e.id_tipo_tarea == id_tipo_tarea)
+                .Where(e => !e.ocupado && e.id_tipo_tarea == id_tipo_tarea&&e.activo)
                 .ToListAsync();
                 if (maquinas == null || maquinas.Count == 0)
                 {
                     return NotFound("No hay Maquinas desocupadas disponibles");
                 }
-                // Mapear cada empleado a tu DTO anónimo
-                // var listaDto = maquinas.Select(e => MapearEmpleadoDto(e)).ToList();
+               
                 return Ok(maquinas);
             }
             catch (Exception ex)
@@ -58,7 +52,7 @@ namespace AgroTili.Api
                 return BadRequest(ex.Message);
             }
         }
-        [Authorize(Roles = "2")]
+       /* [Authorize(Roles = "2")]
         [HttpPut("ocuparMaquina")]
         public async Task<IActionResult> OcuparMaquina([FromBody] Maquinas_Agrarias datosActualizados)
         {
@@ -74,7 +68,7 @@ namespace AgroTili.Api
                 // var res = await _context.Empleados.SingleOrDefaultAsync(x => x.email == usuario);
                 var empleado = await _context.Empleados
                     .Include(e => e.Roles)
-                    .FirstOrDefaultAsync(e => e.email == usuario);
+                    .FirstOrDefaultAsync(e => e.email == usuario&&e.activo);
                 if (empleado == null)
                     return NotFound($"No se encontró el empleado con email {usuario}");
 
@@ -137,6 +131,6 @@ namespace AgroTili.Api
             {
                 return BadRequest("Error al actualizar: " + ex.Message);
             }
-        }
+        }*/
     }
 }
