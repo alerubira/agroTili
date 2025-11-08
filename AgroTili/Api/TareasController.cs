@@ -156,7 +156,7 @@ namespace AgroTili.Api
            [Authorize(Roles = "2")]
           [HttpPut("finalizarTarea")]
         
-        public async Task<IActionResult> FinalizarTarea([FromForm] int idTipoTarea,
+        public async Task<IActionResult> FinalizarTarea([FromForm] int idTarea,
          [FromForm] string observaciones)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
@@ -174,7 +174,7 @@ namespace AgroTili.Api
                     return Unauthorized("El Usuario no existe");
 
                 var tarea = await _context.Tareas
-                       .FirstOrDefaultAsync(t => t.id_tipo_tarea == idTipoTarea && !t.realizada);
+                       .FirstOrDefaultAsync(t => t.id_tipo_tarea == idTarea && !t.realizada);
                 if (tarea == null)
                     return BadRequest("La Tarea no existe o ya fue finalizada");           
 
