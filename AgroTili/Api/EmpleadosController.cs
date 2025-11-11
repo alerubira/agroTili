@@ -179,6 +179,37 @@ namespace AgroTili.Api
                 return BadRequest(ex.Message);
             }
         }
+         [HttpPost("enviarMail")]
+        [AllowAnonymous]
+        public async Task<IActionResult> EnviarMail([FromForm] string Usuario)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(Usuario))
+                    return BadRequest("Usuario es requerido");
+                var empleado = await _context.Empleados
+                       .FirstOrDefaultAsync(p => p.email == Usuario&&p.activo);
+
+                if (empleado == null)
+                    return NotFound("El Usuario no existe");
+                
+                int n = numeroAleatorio();
+                empleado.clave_provisoria = _seguridadService.HashearContraseña(n.ToString());
+                _context.Empleados.Update(empleado);  
+                await _context.SaveChangesAsync();
+  
+                await _emailService.EnviarCorreoAsync(
+                    empleado.email,
+                    "Recuperación de cuenta",
+                    $"Hola {empleado.nombre},  desde AgroTili.Este estu numero para recuperar tu cuenta: {n}"
+                );
+                return Ok("Correo electrónico enviado correctamente");
+            }
+            catch (Exception ex)
+            {
+                return BadRequest("Error al enviar correo: " + ex.Message);
+            }
+        }
         [HttpPut("recuperarClave")]
          [AllowAnonymous]
         public async Task<IActionResult> RecuperarClave([FromForm] string email,[FromForm] string claveEmail, [FromForm] string claveNueva)
@@ -238,37 +269,7 @@ namespace AgroTili.Api
                 return BadRequest(ex.Message);
             }
         }
-        [HttpPost("enviarMail")]
-        [AllowAnonymous]
-        public async Task<IActionResult> EnviarMail([FromForm] string Usuario)
-        {
-            try
-            {
-                if (string.IsNullOrEmpty(Usuario))
-                    return BadRequest("Usuario es requerido");
-                var empleado = await _context.Empleados
-                       .FirstOrDefaultAsync(p => p.email == Usuario&&p.activo);
-
-                if (empleado == null)
-                    return NotFound("El Usuario no existe");
-                
-                int n = numeroAleatorio();
-                empleado.clave_provisoria = _seguridadService.HashearContraseña(n.ToString());
-                _context.Empleados.Update(empleado);  
-                await _context.SaveChangesAsync();
-  
-                await _emailService.EnviarCorreoAsync(
-                    empleado.email,
-                    "Recuperación de cuenta",
-                    $"Hola {empleado.nombre},  desde AgroTili.Este estu numero para recuperar tu cuenta: {n}"
-                );
-                return Ok("Correo electrónico enviado correctamente");
-            }
-            catch (Exception ex)
-            {
-                return BadRequest("Error al enviar correo: " + ex.Message);
-            }
-        }
+       
 
 
        /* private object MapearEmpleadoDto(Empleados res)
