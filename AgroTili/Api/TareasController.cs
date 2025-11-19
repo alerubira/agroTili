@@ -174,14 +174,14 @@ namespace AgroTili.Api
                     return Unauthorized("El Usuario no existe");
 
                 var tarea = await _context.Tareas
-                       .FirstOrDefaultAsync(t => t.id_tipo_tarea == idTarea && !t.realizada);
+                       .FirstOrDefaultAsync(t => t.id_tarea == idTarea && !t.realizada);
                 if (tarea == null)
                     return BadRequest("La Tarea no existe o ya fue finalizada");           
 
                 var operario = await _context.Empleados
                        .FirstOrDefaultAsync(e => e.id_empleado == tarea.id_empleado);
                 if (operario == null)
-                    return BadRequest("El Empleado node la tarea no existe");
+                    return BadRequest("El Empleado de la tarea no existe");
 
                 var maquinaAgraria = await _context.Maquinas_Agrarias
                        .FirstOrDefaultAsync(m => m.id_maquina_agraria == tarea.id_maquina_agraria);
