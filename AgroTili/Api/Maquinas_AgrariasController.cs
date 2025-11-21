@@ -34,9 +34,8 @@ namespace AgroTili.Api
                 string usuario = User?.Claims?.FirstOrDefault(c => c.Type == ClaimTypes.Name)?.Value ?? "";
                 if (string.IsNullOrEmpty(usuario))
                     return BadRequest("No se pudo obtener el email del Empleado");
-
-
-                var maquinas = await _context.Maquinas_Agrarias
+                 
+                  var maquinas = await _context.Maquinas_Agrarias
                 .Include(e => e.Tipos_Tareas)
                 .Where(e => !e.ocupado && e.id_tipo_tarea == id_tipo_tarea&&e.activo)
                 .ToListAsync();
