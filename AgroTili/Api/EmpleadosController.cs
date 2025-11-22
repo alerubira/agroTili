@@ -254,6 +254,7 @@ namespace AgroTili.Api
 
 
                 var operarios = await _context.Empleados
+                .Include(e => e.Roles)
                 .Where(e => !e.ocupado && e.id_role == 3&&e.activo)
                 .ToListAsync();
                 if (operarios == null || operarios.Count == 0)

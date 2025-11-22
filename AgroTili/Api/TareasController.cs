@@ -81,7 +81,7 @@ namespace AgroTili.Api
         [HttpPost("crearTarea")]
 
         public async Task<IActionResult> CrearTarea([FromForm] int idTipoTarea,
-       [FromForm] int IdCampo, [FromForm] int idMaquinaAgraria, [FromForm] int idEmpleado)
+       [FromForm] int idCampo, [FromForm] int idMaquinaAgraria, [FromForm] int idEmpleado)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
@@ -103,7 +103,7 @@ namespace AgroTili.Api
                     return BadRequest("El Tipo de Tarea no existe");
 
                 var campo = await _context.Campos
-                       .FirstOrDefaultAsync(c => c.id_campo == IdCampo && c.activo);
+                       .FirstOrDefaultAsync(c => c.id_campo == idCampo && c.activo);
                 if (campo == null)
                     return BadRequest("El Campo no existe");
 
@@ -125,7 +125,7 @@ namespace AgroTili.Api
                 var nuevaTarea = new Tareas
                 {
                     id_tipo_tarea = idTipoTarea,
-                    id_campo = IdCampo,
+                    id_campo = idCampo,
                     id_maquina_agraria = idMaquinaAgraria,
                     id_empleado = idEmpleado,
                     fecha_inicio = DateTime.Now,
