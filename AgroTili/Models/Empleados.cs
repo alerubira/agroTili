@@ -32,6 +32,7 @@ namespace AgroTili.Models
          public DateTime? fecha_egreso { get; set; }
         [Required]
         public bool activo { get; set; }
+        public String? imagen_perfil{get;set;}
         public String? clave_provisoria{ get; set; }
          // Propiedad de navegación opcional
         public Roles? Roles { get; set; }

@@ -18,7 +18,8 @@ namespace AgroTili.Utils
                 fecha_ingreso = res.fecha_ingreso.ToString("dd-MM-yyyy"),
                 fecha_egreso = res.fecha_egreso?.ToString("dd-MM-yyyy"),
                 activo = res.activo,
-                nombre_role = res.Roles?.nombre_role
+                nombre_role = res.Roles?.nombre_role,
+                imagen_perfil=res.imagen_perfil
             };
         }
     }
