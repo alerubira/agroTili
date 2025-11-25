@@ -271,26 +271,42 @@ namespace AgroTili.Api
             }
         }
        
-
-
-       /* private object MapearEmpleadoDto(Empleados res)
+     [HttpPut("modificarImagen")]
+        public async Task<ActionResult<Empleados>> ModificarImagen(
+    [FromForm] IFormFile imagen,
+    [FromForm] string empleadoModificado) // JSON como string
         {
-            if (res == null) return null!;
+          //  try
+           // {
+                // Obtener propietario del token
+                string usuario = User?.Identity?.Name ?? "";
+                if (string.IsNullOrEmpty(usuario))
+                    return Unauthorized("Token inválido o expirado.");
 
-            return new
-            {
-                id_empleado = res.id_empleado,
-                id_role = res.id_role,
-                apellido = res.apellido ?? string.Empty,
-                nombre = res.nombre ?? string.Empty,
-                email = res.email ?? string.Empty,
-                ocupado = res.ocupado,
-                fecha_ingreso = res.fecha_ingreso.ToString("dd-MM-yyyy"),
-                fecha_egreso = res.fecha_egreso?.ToString("dd-MM-yyyy"),
-                activo = res.activo,
-                nombre_role = res.Roles?.nombre_role
-            };
-        }*/
+                var empleado = await _context.Empleados.FirstOrDefaultAsync(p => p.email == usuario);
+                if (empleado == null)
+                    return NotFound("Empleado no encontrado.");
+
+               /* var options = new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true,
+                    AllowTrailingCommas = true
+                };
+
+                Inmuebles datosInmueble;
+                try
+                {
+                    
+                        datosInmueble = JsonSerializer.Deserialize<Inmuebles>(inmueble, options);
+                  
+                }
+                catch (Exception )
+                {
+                    return BadRequest($"Error interno del servidor");
+                }*/
+
+            return Ok(empleado);
+        }
       private static readonly Random rnd = new Random();
 
                 private int numeroAleatorio()
