@@ -23,13 +23,17 @@ namespace AgroTili.Api
         private readonly IConfiguration _configuration;
         private readonly SeguridadService _seguridadService;
         private readonly EmailService _emailService;
+         private readonly IWebHostEnvironment _environment; 
 
-        public EmpleadosController(DataContext context, IConfiguration config, SeguridadService seguridadService, EmailService emailService)
+        public EmpleadosController(DataContext context, IConfiguration config, SeguridadService seguridadService,
+         EmailService emailService,IWebHostEnvironment environment)
         {
             _context = context;//accede al dataContext
             _configuration = config;//accede a la configuracion de la aplicacion,appseting y claves en .env
             _seguridadService = seguridadService;//accede al servicio de seguridad para generar y validar tokens
             _emailService = emailService;
+            _environment = environment;//para acceder a rutas del servidor
+            
         }
         [HttpGet]
         public async Task<ActionResult<Empleados>> Get()
@@ -273,40 +277,63 @@ namespace AgroTili.Api
        
      [HttpPut("modificarImagen")]
         public async Task<ActionResult<Empleados>> ModificarImagen(
-    [FromForm] IFormFile imagen,
-    [FromForm] string empleadoModificado) // JSON como string
+    [FromForm] IFormFile imagen) 
         {
-          //  try
-           // {
-                // Obtener propietario del token
-                string usuario = User?.Identity?.Name ?? "";
+           try
+            {
+                 if (User == null)
+                    return Unauthorized("Usuario no autenticado");
+                
+                string usuario = User?.Claims?.FirstOrDefault(c => c.Type == ClaimTypes.Name)?.Value ?? "";
                 if (string.IsNullOrEmpty(usuario))
-                    return Unauthorized("Token inválido o expirado.");
+                    return BadRequest("No se pudo obtener el email del Empleado");
 
-                var empleado = await _context.Empleados.FirstOrDefaultAsync(p => p.email == usuario);
+                var empleado = await _context.Empleados
+                    .Include(e => e.Roles)
+                    .FirstOrDefaultAsync(e => e.email == usuario&&e.activo);
                 if (empleado == null)
-                    return NotFound("Empleado no encontrado.");
-
-               /* var options = new JsonSerializerOptions
+                    return NotFound($"No se encontró el empleado con email {usuario}");
+                  //  insertar imagen del usuario
+                //  Guardar la imagen en wwwroot/Uploads
+                  string wwwPath = _environment.WebRootPath;
+                string uploadPath = Path.Combine(wwwPath, "Uploads");
+                string fileName;
+                string filePath;
+                if (!Directory.Exists(uploadPath))
+                    Directory.CreateDirectory(uploadPath);
+                 if (imagen == null || imagen.Length == 0 || !imagen.ContentType.StartsWith("image/"))
                 {
-                    PropertyNameCaseInsensitive = true,
-                    AllowTrailingCommas = true
-                };
-
-                Inmuebles datosInmueble;
-                try
-                {
-                    
-                        datosInmueble = JsonSerializer.Deserialize<Inmuebles>(inmueble, options);
-                  
+                    // Nombre único de la imagen: "imagen_perfil_<Id>.ext"
+                         fileName = $"imagen_perfil_0.png";
+                         filePath = Path.Combine(uploadPath, fileName);
                 }
-                catch (Exception )
+                else
                 {
-                    return BadRequest($"Error interno del servidor");
-                }*/
+                      // Nombre único de la imagen: "imagen_perfil_<Id>.ext"
+                         fileName = $"imagen_perfil_{empleado.id_empleado}{Path.GetExtension(imagen.FileName)}";
+                         filePath = Path.Combine(uploadPath, fileName);
+                            using (var stream = new FileStream(filePath, FileMode.Create))
+                            {
+                                await imagen.CopyToAsync(stream);
+                            }
 
-            return Ok(empleado);
-        }
+                }
+                           // Guardar la ruta relativa en el objeto Empleados
+                empleado.imagen_perfil = Path.Combine("/Uploads", fileName);    
+                 //  Guardar cambios
+                _context.Empleados.Update(empleado);
+                await _context.SaveChangesAsync();
+
+                // Devolver el empleado actualizado
+                return Ok(EmpleadoMapper.MapearEmpleadoDto(empleado));
+            }
+            catch (Exception ex)
+            {
+                return BadRequest("Error al actualizar La Imagen de perfil: " + ex.Message);
+            }
+
+           }
+        
       private static readonly Random rnd = new Random();
 
                 private int numeroAleatorio()
