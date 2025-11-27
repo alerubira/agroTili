@@ -9,6 +9,9 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using AgroTili.Utils;
+using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.Processing;
+using SixLabors.ImageSharp.Formats;
 //using System.Net;
 //using System.Net.Mail;
 
@@ -312,10 +315,14 @@ namespace AgroTili.Api
                       // Nombre único de la imagen: "imagen_perfil_<Id>.ext"
                          fileName = $"imagen_perfil_{empleado.id_empleado}{Path.GetExtension(imagen.FileName)}";
                          filePath = Path.Combine(uploadPath, fileName);
-                            using (var stream = new FileStream(filePath, FileMode.Create))
-                            {
-                                await imagen.CopyToAsync(stream);
-                            }
+                             using (var image = await Image.LoadAsync(imagen.OpenReadStream()))
+                                {
+                                    // rota a 90 grados
+                                    image.Mutate(x => x.Rotate(90));
+
+                                    // Guarda la imagen corregida
+                                    await image.SaveAsync(filePath);
+                                }
 
                 }
                            // Guardar la ruta relativa en el objeto Empleados
