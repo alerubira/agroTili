@@ -12,6 +12,12 @@ using AgroTili.Utils;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Processing;
 using SixLabors.ImageSharp.Formats;
+using SixLabors.ImageSharp.Metadata.Profiles.Exif;
+using SixLabors.ImageSharp.Metadata;
+using SixLabors.ImageSharp.PixelFormats;
+
+
+
 //using System.Net;
 //using System.Net.Mail;
 
@@ -298,7 +304,7 @@ namespace AgroTili.Api
                     return NotFound($"No se encontró el empleado con email {usuario}");
                   //  insertar imagen del usuario
                 //  Guardar la imagen en wwwroot/Uploads
-                  string wwwPath = _environment.WebRootPath;
+                string wwwPath = _environment.WebRootPath;
                 string uploadPath = Path.Combine(wwwPath, "Uploads");
                 string fileName;
                 string filePath;
@@ -312,21 +318,61 @@ namespace AgroTili.Api
                 }
                 else
                 {
-                      // Nombre único de la imagen: "imagen_perfil_<Id>.ext"
-                         fileName = $"imagen_perfil_{empleado.id_empleado}{Path.GetExtension(imagen.FileName)}";
-                         filePath = Path.Combine(uploadPath, fileName);
-                             using (var image = await Image.LoadAsync(imagen.OpenReadStream()))
-                                {
-                                    // rota a 90 grados
+                    // Nombre único de la imagen: "imagen_perfil_<Id>.ext"
+                    fileName = $"imagen_perfil_{empleado.id_empleado}{Path.GetExtension(imagen.FileName)}";
+                    filePath = Path.Combine(uploadPath, fileName);
+                 using (var image = await Image.LoadAsync<Rgba32>(imagen.OpenReadStream()))
+                        {
+                            var exif = image.Metadata.ExifProfile;
+                            ushort orientation = 1;
+
+                            if (exif != null && exif.TryGetValue(ExifTag.Orientation, out IExifValue<ushort> orientationValue))
+                            {
+                                orientation = orientationValue.Value;
+                            }
+
+                            
+
+                            // Rotar según EXIF
+                            switch (orientation)
+                            {
+                                case 3:
+                                    image.Mutate(x => x.Rotate(180));
+                                    break;
+                                case 6:
                                     image.Mutate(x => x.Rotate(90));
+                                    break;
+                                case 8:
+                                    image.Mutate(x => x.Rotate(270));
+                                    break;
+                            }
 
-                                    // Guarda la imagen corregida
-                                    await image.SaveAsync(filePath);
+                         if (orientation == 1)
+                            {
+                                bool esVertical = image.Height > image.Width;
+
+                                // Foto vertical: NO rotar nunca (ya viene bien la de galería)
+                                if (!esVertical) // o sea: es horizontal
+                                {
+                                    // Si la imagen está acostada pero debería ser vertical (muy raro)
+                                    // rotamos solo en ese caso
+                                    if (image.Width > image.Height && image.Height < image.Width / 1.5)
+                                    {
+                                        image.Mutate(x => x.Rotate(90));
+                                    }
                                 }
+                            }
 
-                }
-                           // Guardar la ruta relativa en el objeto Empleados
-                empleado.imagen_perfil = Path.Combine("/Uploads", fileName);    
+                               await image.SaveAsync(filePath);
+                        }
+
+                 
+
+                }     
+                
+        
+
+                  empleado.imagen_perfil = Path.Combine("/Uploads", fileName);    
                  //  Guardar cambios
                 _context.Empleados.Update(empleado);
                 await _context.SaveChangesAsync();
@@ -339,7 +385,7 @@ namespace AgroTili.Api
                 return BadRequest("Error al actualizar La Imagen de perfil: " + ex.Message);
             }
 
-           }
+        }
         
       private static readonly Random rnd = new Random();
 
