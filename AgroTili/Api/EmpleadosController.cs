@@ -69,58 +69,7 @@ namespace AgroTili.Api
                 return BadRequest(ex.Message);
             }
         }
-        [HttpPost("login")]
-        [AllowAnonymous]
-        public async Task<IActionResult> Login([FromForm] string Usuario, [FromForm] string Clave)
-        {
-            try
-            {
-                if (string.IsNullOrEmpty(Usuario) || string.IsNullOrEmpty(Clave))
-                    return BadRequest("Usuario y clave son requeridos");
-                var empleado = await _context.Empleados
-                       .FirstOrDefaultAsync(p => p.email == Usuario&&p.activo);
-
-                if (empleado == null)
-                    return Unauthorized("El Usuario no existe");
-               
-                if (!_seguridadService.VerificarContraseña(Clave, empleado.clave))
-                    return Unauthorized("Usuario o clave incorrectos");
-                
-
-                var secretKey = _configuration["TokenAuthentication:SecretKey"];
-                var issuer = _configuration["TokenAuthentication:Issuer"];
-                var audience = _configuration["TokenAuthentication:Audience"];
-              
-
-                var key = new SymmetricSecurityKey(Encoding.ASCII.GetBytes(secretKey ?? ""));
-                var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
-                
-
-                var claims = new[]
-                {
-                    new Claim(ClaimTypes.Name, empleado.email),
-                    new Claim("id_empleado", empleado.id_empleado.ToString()),
-                    new Claim("id_role", empleado.id_role.ToString()),
-                    new Claim(ClaimTypes.Role, empleado.id_role.ToString())
-                };
-
-                var token = new JwtSecurityToken(
-                    issuer: issuer,
-                    audience: audience,
-                    claims: claims,
-                    expires: DateTime.Now.AddHours(5),
-                    signingCredentials: creds
-                );
-
-                var tokenString = new JwtSecurityTokenHandler().WriteToken(token);
-
-                return Ok(tokenString);
-            }
-            catch (Exception ex)
-            {
-                return BadRequest("desde api: " + ex.Message);
-            }
-        }
+       
         [HttpPut("actualizar")]
         public async Task<ActionResult<Empleados>> Actualizar([FromBody] EmpleadoUpdateDto datosActualizados)
         {
@@ -158,101 +107,7 @@ namespace AgroTili.Api
                 return BadRequest("Error al actualizar: " + ex.Message);
             }
         }
-        [HttpPut("cambiarClave")]
-        public async Task<IActionResult> CambiarClave([FromForm] string claveActual, [FromForm] string claveNueva)
-        {
-            try
-            {
-                if (User == null)
-                    return Unauthorized("Usuario no autenticado");
-                string usuario = User?.Claims?.FirstOrDefault(c => c.Type == ClaimTypes.Name)?.Value ?? "";
-                if (string.IsNullOrEmpty(usuario))
-                    return BadRequest("No se pudo obtener el email del Empleado");
-
-                var empleado = await _context.Empleados
-                    .Include(e => e.Roles)
-                    .FirstOrDefaultAsync(e => e.email == usuario&&e.activo);
-                if (empleado == null)
-                    return NotFound($"No se encontró el empleado con email {usuario}");
-
-                // Verificar contraseña actual
-               
-                if (!_seguridadService.VerificarContraseña(claveActual, empleado.clave))
-                    return Unauthorized("La contraseña actual es incorrecta");
-
-                // Actualizar a la nueva contraseña
-                empleado.clave = _seguridadService.HashearContraseña(claveNueva).Trim();
-                _context.Empleados.Update(empleado);
-                await _context.SaveChangesAsync();
-
-                return NoContent(); // Devuelve 204, sin contenido
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(ex.Message);
-            }
-        }
-         [HttpPost("enviarMail")]
-        [AllowAnonymous]
-        public async Task<IActionResult> EnviarMail([FromForm] string Usuario)
-        {
-            try
-            {
-                if (string.IsNullOrEmpty(Usuario))
-                    return BadRequest("Usuario es requerido");
-                var empleado = await _context.Empleados
-                       .FirstOrDefaultAsync(p => p.email == Usuario&&p.activo);
-
-                if (empleado == null)
-                    return NotFound("El Usuario no existe");
-                
-                int n = numeroAleatorio();
-                empleado.clave_provisoria = _seguridadService.HashearContraseña(n.ToString());
-                _context.Empleados.Update(empleado);  
-                await _context.SaveChangesAsync();
-  
-                await _emailService.EnviarCorreoAsync(
-                    empleado.email,
-                    "Recuperación de cuenta",
-                    $"Hola {empleado.nombre},  desde AgroTili.Este estu numero para recuperar tu cuenta: {n}"
-                );
-                return Ok("Correo electrónico enviado correctamente");
-            }
-            catch (Exception ex)
-            {
-                return BadRequest("Error al enviar correo: " + ex.Message);
-            }
-        }
-        [HttpPut("recuperarClave")]
-         [AllowAnonymous]
-        public async Task<IActionResult> RecuperarClave([FromForm] string email,[FromForm] string claveEmail, [FromForm] string claveNueva)
-        {
-            try
-            {
-
-                var empleado = await _context.Empleados
-                    .Include(e => e.Roles)
-                    .FirstOrDefaultAsync(e => e.email == email&&e.activo);
-                if (empleado == null)
-                    return NotFound($"No se encontró el empleado con email {email}");
-
-                
-                if (!_seguridadService.VerificarContraseña(claveEmail, empleado.clave_provisoria ?? ""))
-                    return Unauthorized("La contraseña del mail es incorrecta");
-
-                // Actualizar a la nueva contraseña
-                empleado.clave = _seguridadService.HashearContraseña(claveNueva).Trim();
-                empleado.clave_provisoria = null;
-                _context.Empleados.Update(empleado);
-                await _context.SaveChangesAsync();
-
-                return NoContent(); // Devuelve 204, sin contenido
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(ex.Message);
-            }
-        }
+       
         [Authorize(Roles = "2")]
         [HttpGet("operariosDesocupados")]
         public async Task<ActionResult<List<Empleados>>> OperariosDesocupados()
@@ -321,7 +176,7 @@ namespace AgroTili.Api
                     // Nombre único de la imagen: "imagen_perfil_<Id>.ext"
                     fileName = $"imagen_perfil_{empleado.id_empleado}{Path.GetExtension(imagen.FileName)}";
                     filePath = Path.Combine(uploadPath, fileName);
-                 using (var image = await Image.LoadAsync<Rgba32>(imagen.OpenReadStream()))
+                       using (var image = await Image.LoadAsync<Rgba32>(imagen.OpenReadStream()))
                         {
                             var exif = image.Metadata.ExifProfile;
                             ushort orientation = 1;
@@ -331,10 +186,7 @@ namespace AgroTili.Api
                                 orientation = orientationValue.Value;
                             }
 
-                            
-
-                            // Rotar según EXIF
-                            switch (orientation)
+                              switch (orientation)
                             {
                                 case 3:
                                     image.Mutate(x => x.Rotate(180));
@@ -366,13 +218,9 @@ namespace AgroTili.Api
                                await image.SaveAsync(filePath);
                         }
 
-                 
-
-                }     
+                 }     
                 
-        
-
-                  empleado.imagen_perfil = Path.Combine("/Uploads", fileName);    
+                empleado.imagen_perfil = Path.Combine("/Uploads", fileName);    
                  //  Guardar cambios
                 _context.Empleados.Update(empleado);
                 await _context.SaveChangesAsync();
@@ -387,13 +235,5 @@ namespace AgroTili.Api
 
         }
         
-      private static readonly Random rnd = new Random();
-
-                private int numeroAleatorio()
-                {
-                    return rnd.Next(1000, 10000);
-                }
-
-    
-    }
+     }
 }
