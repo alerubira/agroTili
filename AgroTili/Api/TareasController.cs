@@ -41,12 +41,13 @@ namespace AgroTili.Api
                     return Unauthorized("El Usuario no existe");       
 
                   var tareas = await _context.Tareas
-            .Include(t => t.Campos)
-            .Include(t => t.Tipos_Tareas)
-            .Include(t => t.Empleados)
-            .Include(t => t.Maquinas_Agrarias)
-            .Where(t => t.Campos!.id_empleado == capataz.id_empleado)
-            .Select(t => new
+                .Include(t => t.Campos)
+                .Include(t => t.Tipos_Tareas)
+                .Include(t => t.Empleados)
+                .Include(t => t.Maquinas_Agrarias)
+                .Where(t => t.Campos!.id_empleado == capataz.id_empleado)
+                .OrderByDescending(t => t.id_tarea) 
+                .Select(t => new
             {
                 t.id_tarea,
                 id_tipo_tarea = t.id_tipo_tarea,
