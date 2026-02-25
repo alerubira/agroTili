@@ -17,7 +17,7 @@ namespace AgroTili.Services
 
         public string HashearContraseña(string contraseña)
         {
-            // Combinar el salt global con uno aleatorio por usuario
+            // Combinar el salt global con uno aleatorio por usuario,no funsiona asi
             byte[] saltBytes = System.Text.Encoding.UTF8.GetBytes(globalSalt);
 
             string hashed = Convert.ToBase64String(KeyDerivation.Pbkdf2(
@@ -30,11 +30,29 @@ namespace AgroTili.Services
             return hashed;
         }
 
-        public bool VerificarContraseña(string contraseñaIngresada, string hashGuardado)
+        /*public bool VerificarContraseña(string contraseñaIngresada, string hashGuardado)
         {
             string hashIngresado = HashearContraseña(contraseñaIngresada);
             return hashGuardado == hashIngresado;
-        }
-        
+        }*/
+        public bool VerificarContraseña(string contraseñaIngresada, string hashGuardado)
+            {
+                byte[] saltBytes = System.Text.Encoding.UTF8.GetBytes(globalSalt);
+
+                byte[] hashIngresado = KeyDerivation.Pbkdf2(
+                    password: contraseñaIngresada,
+                    salt: saltBytes,
+                    prf: KeyDerivationPrf.HMACSHA1,
+                    iterationCount: 10000,
+                    numBytesRequested: 256 / 8);
+
+                byte[] hashGuardadoBytes = Convert.FromBase64String(hashGuardado);
+
+                return CryptographicOperations.FixedTimeEquals(
+                    hashIngresado,
+                    hashGuardadoBytes
+                );
+            }
+                    
     }
 }

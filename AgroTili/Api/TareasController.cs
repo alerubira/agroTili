@@ -36,7 +36,7 @@ namespace AgroTili.Api
                 if (string.IsNullOrEmpty(usuario))
                     return BadRequest("No se pudo obtener el email del Empleado");
                 var capataz = await _context.Empleados
-                       .FirstOrDefaultAsync(p => p.email == usuario && p.activo);
+                       .FirstOrDefaultAsync(c => c.email == usuario && c.activo);
                 if (capataz == null)
                     return Unauthorized("El Usuario no existe");       
 
@@ -93,7 +93,7 @@ namespace AgroTili.Api
                 if (string.IsNullOrEmpty(Usuario))
                     return BadRequest("No se pudo obtener el email del Empleado");
                 var capataz = await _context.Empleados
-                       .FirstOrDefaultAsync(p => p.email == Usuario && p.activo);
+                       .FirstOrDefaultAsync(c => c.email == Usuario && c.activo);
 
                 if (capataz == null)
                     return Unauthorized("El Usuario no existe");
@@ -116,7 +116,7 @@ namespace AgroTili.Api
                     return BadRequest("La Maquina Agraria no es apta para este tipo de tarea");
 
                 var operario = await _context.Empleados
-                       .FirstOrDefaultAsync(e => e.id_empleado == idEmpleado && e.activo && !e.ocupado);
+                       .FirstOrDefaultAsync(e => e.id_empleado == idEmpleado && e.activo && !e.ocupado&&e.id_role==3);
                 if (operario == null)
                     return BadRequest("El Empleado no esta disponible");
 
@@ -169,7 +169,7 @@ namespace AgroTili.Api
                 if (string.IsNullOrEmpty(Usuario))
                     return BadRequest("No se pudo obtener el email del Empleado");    
                 var capataz = await _context.Empleados
-                       .FirstOrDefaultAsync(p => p.email == Usuario&&p.activo);
+                       .FirstOrDefaultAsync(c => c.email == Usuario&&c.activo);
 
                 if (capataz == null)
                     return Unauthorized("El Usuario no existe");

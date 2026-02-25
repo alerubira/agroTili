@@ -36,8 +36,8 @@ namespace AgroTili.Api
                     return BadRequest("No se pudo obtener el email del Empleado");
                  
                   var maquinas = await _context.Maquinas_Agrarias
-                .Include(e => e.Tipos_Tareas)
-                .Where(e => !e.ocupado && e.id_tipo_tarea == id_tipo_tarea&&e.activo)
+                .Include(m => m.Tipos_Tareas) // Incluir la entidad relacionada Tipos_Tareas
+                .Where(m => !m.ocupado && m.id_tipo_tarea == id_tipo_tarea&&m.activo)
                 .ToListAsync();
                 if (maquinas == null || maquinas.Count == 0)
                 {

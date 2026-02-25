@@ -42,8 +42,7 @@ namespace AgroTili.Api
                        
 
                 var campos = await _context.Campos
-                //.Include(e => e.Tipos_Tareas)
-                .Where(e => e.activo && e.id_empleado == capataz.id_empleado)
+                .Where(c => c.activo && c.id_empleado == capataz.id_empleado)
                 .ToListAsync();
                 if (campos == null || campos.Count == 0)
                 {

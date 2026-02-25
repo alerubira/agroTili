@@ -129,7 +129,7 @@ namespace AgroTili.Api
                 {
                     return NotFound("No hay operarios desocupados disponibles");
                 }
-                // Mapear cada empleado a tu DTO anónimo
+                // Mapear cada empleado a mi DTO anónimo
                 var listaDto = operarios.Select(e => EmpleadoMapper.MapearEmpleadoDto(e)).ToList();
                 return Ok(listaDto);
             }
@@ -167,13 +167,13 @@ namespace AgroTili.Api
                     Directory.CreateDirectory(uploadPath);
                  if (imagen == null || imagen.Length == 0 || !imagen.ContentType.StartsWith("image/"))
                 {
-                    // Nombre único de la imagen: "imagen_perfil_<Id>.ext"
+                    // Nombre único de la imagen: "imagen_perfil_<Id>.png"
                          fileName = $"imagen_perfil_0.png";
                          filePath = Path.Combine(uploadPath, fileName);
                 }
                 else
                 {
-                    // Nombre único de la imagen: "imagen_perfil_<Id>.ext"
+                    // Nombre único de la imagen: "imagen_perfil_<Id>.pmg"
                     fileName = $"imagen_perfil_{empleado.id_empleado}{Path.GetExtension(imagen.FileName)}";
                     filePath = Path.Combine(uploadPath, fileName);
                        using (var image = await Image.LoadAsync<Rgba32>(imagen.OpenReadStream()))
